@@ -25,6 +25,7 @@ namespace SpatialGEV {
   template <class Type>
   using cRefRowVector_t = const Eigen::Ref <const Eigen::Matrix<Type, 1, Eigen::Dynamic> >;
 
+#if EIGEN_MAJOR_VERSION >= 5
   // Eigen 5.0 removed the free pow(ArrayBase, scalar) for non-arithmetic
   // (e.g. TMB CppAD::AD<double>) scalar exponents, so provide an equivalent
   // elementwise-pow-by-scalar by building the CwiseUnaryOp directly.
@@ -36,6 +37,7 @@ namespace SpatialGEV {
     return Eigen::CwiseUnaryOp<Eigen::internal::scalar_unary_pow_op<Scalar, ExponentScalar>, const Derived>(
         x.derived(), Eigen::internal::scalar_unary_pow_op<Scalar, ExponentScalar>(e));
   }
+#endif
 
   /// Calculates the log-density of the Gumbel distribution.
   ///
@@ -335,7 +337,11 @@ namespace SpatialGEV {
       quant = a - _b * log(-log(prob.array()));
     } else {
       // Using full GEV distribution
+#if EIGEN_VERSION_AT_LEAST(5, 0, 0)
       quant = a + (_b/_s) * (pow_cwise(-log(prob.array()), -_s) - Type(1.0));
+#else
+      quant = a + (_b/_s) * (pow(-log(prob.array()), -_s) - Type(1.0));
+#endif
     }
     return;
   }
